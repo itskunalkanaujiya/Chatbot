@@ -194,9 +194,24 @@ def get_video_meta(video_id: str):
     return "", f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
 
 
+# @st.cache_resource(show_spinner=False)
+# def build_chain(video_id: str):
+#     api = YouTubeTranscriptApi()
+#     transcript_list = None
+#     for lang in (["en"], ["hi"], ["en-IN"]):
+#         try:
+#             transcript_list = api.fetch(video_id=video_id, languages=lang)
+#             break
+#         except Exception:
+#             continue
+#     if transcript_list is None:
+#         raise TranscriptsDisabled(video_id)
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
+from youtube_transcript_api._api import YouTubeTranscriptApi as YTA
+
 @st.cache_resource(show_spinner=False)
 def build_chain(video_id: str):
-    api = YouTubeTranscriptApi()
+    api = YouTubeTranscriptApi(cookie_path="cookies.txt")  # <-- pass cookies
     transcript_list = None
     for lang in (["en"], ["hi"], ["en-IN"]):
         try:
@@ -206,6 +221,7 @@ def build_chain(video_id: str):
             continue
     if transcript_list is None:
         raise TranscriptsDisabled(video_id)
+    # ... rest of your code unchanged
 
     transcript = " ".join(chunk.text for chunk in transcript_list)
 
