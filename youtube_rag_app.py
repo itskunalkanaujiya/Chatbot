@@ -208,27 +208,37 @@ def get_video_meta(video_id: str):
 #             continue
 #     if transcript_list is None:
 #         raise TranscriptsDisabled(video_id)
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
-from youtube_transcript_api._api import YouTubeTranscriptApi as YTA
-import os
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api._http_client import HttpClient
+import requests
 
-COOKIES_PATH = "cookies.txt" if os.path.exists("cookies.txt") else None
 @st.cache_resource(show_spinner=False)
 def build_chain(video_id: str):
-    api = YouTubeTranscriptApi(cookie_path="cookies.txt")  # <-- pass cookies
+    session = requests.Session()
+
+    # Load cookies into session if available
+    if os.path.exists("cookies.txt"):
+        import http.cookiejar
+        jar = http.cookiejar.MozillaCookieJar("cookies.txt")
+        jar.load(ignore_discard=True, ignore_expires=True)
+        session.cookies = jar
+
+    # Pass the session to the API
+    ytt_api = YouTubeTranscriptApi(http_client=HttpClient(session))
+
     transcript_list = None
     for lang in (["en"], ["hi"], ["en-IN"]):
         try:
-            transcript_list = api.fetch(video_id=video_id, languages=lang)
+            transcript_list = ytt_api.fetch(video_id=video_id, languages=lang)
             break
         except Exception:
             continue
+
     if transcript_list is None:
         raise TranscriptsDisabled(video_id)
-    # ... rest of your code unchanged
 
     transcript = " ".join(chunk.text for chunk in transcript_list)
-
+    # ... rest of your code unchanged
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = splitter.create_documents([transcript])
 
