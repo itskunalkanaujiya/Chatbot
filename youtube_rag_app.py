@@ -208,7 +208,9 @@ def get_video_meta(video_id: str):
 #         raise TranscriptsDisabled(video_id)
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled
 from youtube_transcript_api._api import YouTubeTranscriptApi as YTA
+import os
 
+COOKIES_PATH = "cookies.txt" if os.path.exists("cookies.txt") else None
 @st.cache_resource(show_spinner=False)
 def build_chain(video_id: str):
     api = YouTubeTranscriptApi(cookie_path="cookies.txt")  # <-- pass cookies
